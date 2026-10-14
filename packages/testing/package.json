@@ -1,0 +1,16 @@
+{
+  "name": "@fp/testing",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/platform": "workspace:*",
+    "postgres": "3.4.9"
+  }
+}

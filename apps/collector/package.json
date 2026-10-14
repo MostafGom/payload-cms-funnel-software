@@ -1,0 +1,24 @@
+{
+  "name": "@fp/collector",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/consent": "workspace:*",
+    "@fp/event-schemas": "workspace:*",
+    "@fp/platform": "workspace:*",
+    "@hono/node-server": "2.1.3",
+    "hono": "4.13.13",
+    "isbot": "5.2.2",
+    "ua-parser-js": "2.0.10",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@fp/testing": "workspace:*"
+  }
+}

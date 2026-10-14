@@ -1,0 +1,37 @@
+{
+  "name": "@fp/platform",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./logger": "./src/logger.ts",
+    "./errors": "./src/errors.ts",
+    "./context": "./src/context.ts",
+    "./ids": "./src/ids.ts",
+    "./crypto": "./src/crypto/index.ts",
+    "./redis": "./src/redis.ts",
+    "./otel": "./src/otel.ts",
+    "./http": "./src/http.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/core": "2.11.0",
+    "@opentelemetry/exporter-metrics-otlp-proto": "0.222.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "0.222.0",
+    "@opentelemetry/resources": "2.11.0",
+    "@opentelemetry/sdk-metrics": "2.11.0",
+    "@opentelemetry/sdk-trace-base": "2.11.0",
+    "@opentelemetry/sdk-trace-node": "2.11.0",
+    "@opentelemetry/semantic-conventions": "1.43.0",
+    "ioredis": "6.0.0",
+    "libphonenumber-js": "1.13.15",
+    "pino": "10.4.0",
+    "uuid": "14.0.3",
+    "zod": "4.6.5"
+  }
+}

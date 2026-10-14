@@ -1,0 +1,39 @@
+{
+  "name": "funnel-platform",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24.15.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "turbo run typecheck",
+    "test": "vitest run --project unit",
+    "test:int": "vitest run --project integration",
+    "test:watch": "vitest --project unit",
+    "boundaries": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose -f infra/compose/dev.yml up -d --wait",
+    "infra:down": "docker compose -f infra/compose/dev.yml down",
+    "db:migrate": "pnpm --filter @fp/db migrate && pnpm --filter @fp/web payload migrate",
+    "docs:generate": "pnpm --filter @fp/contracts docs:generate"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@next/eslint-plugin-next": "16.4.0",
+    "@types/node": "24.12.3",
+    "dependency-cruiser": "18.6.0",
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "prettier": "3.6.2",
+    "turbo": "2.11.7",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vitest": "5.0.4"
+  }
+}

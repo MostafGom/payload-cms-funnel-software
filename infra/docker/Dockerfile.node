@@ -1,0 +1,31 @@
+# Image for Node services that run TypeScript source directly via Node's type stripping
+# (collector, worker); each app exposes src/main.ts.
+#   docker build -f infra/docker/Dockerfile.node --build-arg APP=collector -t fp-collector .
+# `turbo prune` produces a lockfile containing only APP's dependency graph, so the image never
+# ships Next/Payload. Workspace packages stay as symlinks outside node_modules, which Node's type
+# stripping requires.
+ARG NODE_VERSION=24.21.0
+
+FROM node:${NODE_VERSION}-alpine AS base
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=1
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS pruner
+ARG APP
+COPY . .
+RUN pnpm dlx turbo@2.11.7 prune "@fp/${APP}" --docker
+
+FROM base AS deps
+COPY --from=pruner /app/out/json/ .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
+COPY --from=pruner /app/out/full/ .
+
+FROM node:${NODE_VERSION}-alpine AS runner
+ARG APP
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=deps --chown=node:node /app /app
+USER node
+WORKDIR /app/apps/${APP}
+CMD ["node", "src/main.ts"]

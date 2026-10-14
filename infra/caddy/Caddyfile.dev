@@ -1,0 +1,13 @@
+{
+	auto_https off
+}
+
+# Any host on :8080 (e.g. http://localhost:8080, http://go.localhost:8080) behaves like a funnel host.
+:8080 {
+	handle /_t/* {
+		reverse_proxy host.docker.internal:3100
+	}
+	handle {
+		reverse_proxy host.docker.internal:3000
+	}
+}
