@@ -1,0 +1,17 @@
+{
+  "name": "@fp/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "docs:generate": "node scripts/generate-docs.ts"
+  },
+  "dependencies": {
+    "zod": "4.6.5",
+    "@fp/event-schemas": "workspace:*"
+  }
+}
