@@ -1,0 +1,52 @@
+{
+  "name": "@fp/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --port 3000",
+    "build": "next build",
+    "start": "next start --port 3000",
+    "payload": "payload",
+    "generate:types": "payload generate:types",
+    "generate:importmap": "payload generate:importmap",
+    "migrate:create": "payload migrate:create",
+    "migrate": "payload migrate",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed": "payload run src/scripts/seed.ts",
+    "migrate:check": "sh scripts/check-migration-drift.sh",
+    "predev": "node scripts/copy-sdk.mjs",
+    "prebuild": "node scripts/copy-sdk.mjs"
+  },
+  "dependencies": {
+    "@fp/attribution": "workspace:*",
+    "@fp/consent": "workspace:*",
+    "@fp/contracts": "workspace:*",
+    "@fp/db": "workspace:*",
+    "@fp/email": "workspace:*",
+    "@fp/event-schemas": "workspace:*",
+    "@fp/experiments": "workspace:*",
+    "@fp/forms": "workspace:*",
+    "@fp/platform": "workspace:*",
+    "@fp/tracker-sdk": "workspace:*",
+    "@payloadcms/db-postgres": "3.90.2",
+    "@payloadcms/live-preview-react": "3.90.2",
+    "@payloadcms/next": "3.90.2",
+    "@payloadcms/richtext-lexical": "3.90.2",
+    "@payloadcms/storage-s3": "3.90.2",
+    "@payloadcms/ui": "3.90.2",
+    "graphql": "16.13.2",
+    "ioredis": "6.0.0",
+    "next": "16.4.0",
+    "payload": "3.90.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sharp": "0.35.5",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@fp/testing": "workspace:*"
+  }
+}
