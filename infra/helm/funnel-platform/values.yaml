@@ -1,0 +1,35 @@
+# Postgres, Valkey and S3 are external (managed or the data node); this chart runs stateless apps.
+image:
+  registry: ghcr.io/your-org
+  tag: ''
+  pullPolicy: IfNotPresent
+envFromSecret: fp-app-env # Secret with the same keys as infra/env/app.env.example
+
+web:
+  replicas: 2
+  resources: { requests: { cpu: 250m, memory: 512Mi }, limits: { memory: 1536Mi } }
+collector:
+  replicas: 2
+  resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { memory: 256Mi } }
+  hpa: { minReplicas: 2, maxReplicas: 10, cpu: 60 }
+workers:
+  # One Deployment per role group; KEDA scales on queue depth (ADR-0019).
+  - name: ingest
+    roles: ingest,relay
+    replicas: 2
+    keda:
+      {
+        type: redis-streams,
+        stream: 'ingest:events',
+        consumerGroup: pg-writer,
+        pendingEntriesCount: '2000',
+        max: 8,
+      }
+  - name: destinations
+    roles: destinations,email
+    replicas: 1
+    keda: { type: redis, listName: 'fp:email:wait', listLength: '500', max: 6 }
+  - name: scheduler
+    roles: scheduler
+    replicas: 1
+redisAddressSecretKey: REDIS_ADDRESS # host:port for KEDA's scaler (TriggerAuthentication below)
