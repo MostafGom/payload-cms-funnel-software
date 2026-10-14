@@ -1,0 +1,19 @@
+{
+  "name": "@fp/dest-tiktok-events",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/destinations-sdk": "workspace:*",
+    "@fp/platform": "workspace:*"
+  },
+  "devDependencies": {
+    "@fp/contracts": "workspace:*"
+  }
+}
