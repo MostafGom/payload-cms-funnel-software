@@ -1,0 +1,50 @@
+{{- range .Values.workers }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: fp-worker-{{ .name }}, labels: { app: fp-worker-{{ .name }} } }
+spec:
+  replicas: {{ .replicas }}
+  selector: { matchLabels: { app: fp-worker-{{ .name }} } }
+  template:
+    metadata: { labels: { app: fp-worker-{{ .name }} } }
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: worker
+          image: {{ include "fp.image" (dict "root" $ "name" "worker") }}
+          envFrom: [{ secretRef: { name: {{ $.Values.envFromSecret }} } }]
+          env:
+            - { name: WORKER_ROLES, value: {{ .roles | quote }} }
+            - { name: WORKER_NAME, valueFrom: { fieldRef: { fieldPath: metadata.name } } }
+          {{- include "fp.securityContext" $ | nindent 10 }}
+{{- if .keda }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata: { name: fp-worker-{{ .name }} }
+spec:
+  scaleTargetRef: { name: fp-worker-{{ .name }} }
+  minReplicaCount: {{ .replicas }}
+  maxReplicaCount: {{ .keda.max }}
+  triggers:
+    - type: {{ .keda.type }}
+      authenticationRef: { name: fp-redis }
+      metadata:
+        addressFromEnv: {{ $.Values.redisAddressSecretKey }}
+        {{- if .keda.stream }}
+        stream: {{ .keda.stream | quote }}
+        consumerGroup: {{ .keda.consumerGroup }}
+        pendingEntriesCount: {{ .keda.pendingEntriesCount | quote }}
+        {{- else }}
+        listName: {{ .keda.listName | quote }}
+        listLength: {{ .keda.listLength | quote }}
+        {{- end }}
+{{- end }}
+{{- end }}
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata: { name: fp-redis }
+spec:
+  secretTargetRef: [{ parameter: password, name: {{ .Values.envFromSecret }}, key: REDIS_PASSWORD }]

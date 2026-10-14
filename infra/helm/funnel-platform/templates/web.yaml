@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: fp-web, labels: { app: fp-web } }
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector: { matchLabels: { app: fp-web } }
+  strategy: { rollingUpdate: { maxUnavailable: 0, maxSurge: 1 } }
+  template:
+    metadata: { labels: { app: fp-web } }
+    spec:
+      initContainers:
+        - name: migrate
+          image: {{ include "fp.image" (dict "root" . "name" "migrator") }}
+          envFrom: [{ secretRef: { name: {{ .Values.envFromSecret }} } }]
+      containers:
+        - name: web
+          image: {{ include "fp.image" (dict "root" . "name" "web") }}
+          ports: [{ containerPort: 3000 }]
+          envFrom: [{ secretRef: { name: {{ .Values.envFromSecret }} } }]
+          readinessProbe: { httpGet: { path: /api/readyz, port: 3000 }, periodSeconds: 5 }
+          livenessProbe: { httpGet: { path: /api/healthz, port: 3000 }, periodSeconds: 10 }
+          resources: {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts: [{ name: tmp, mountPath: /tmp }, { name: cache, mountPath: /app/apps/web/.next/cache }]
+          {{- include "fp.securityContext" . | nindent 10 }}
+      volumes: [{ name: tmp, emptyDir: {} }, { name: cache, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: fp-web }
+spec: { selector: { app: fp-web }, ports: [{ port: 3000, targetPort: 3000 }] }

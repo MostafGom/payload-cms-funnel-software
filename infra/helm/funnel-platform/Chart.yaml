@@ -1,0 +1,6 @@
+apiVersion: v2
+name: funnel-platform
+description: Web (Next+Payload), collector and worker roles (scale stage S3, plan §7)
+type: application
+version: 0.1.0
+appVersion: '0.1.0'
