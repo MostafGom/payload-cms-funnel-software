@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 24.21.0
+
+jobs:
+  quality:
+    name: Lint, types, unit tests, boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm boundaries
+
+  integration:
+    name: Integration tests + migration drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: fp
+          POSTGRES_PASSWORD: fp
+          POSTGRES_DB: fp
+        ports: ['54330:5432']
+        options: >-
+          --health-cmd "pg_isready -U fp -d fp" --health-interval 2s --health-retries 30
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: ['6390:6379']
+        options: >-
+          --health-cmd "valkey-cli ping" --health-interval 2s --health-retries 30
+    env:
+      DATABASE_URL: postgres://fp:fp@localhost:54330/fp
+      REDIS_URL: redis://localhost:6390
+      PAYLOAD_SECRET: ci-only-secret-0123456789abcdef0123
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3000
+      SECRETS_KEYRING: k1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      SECRETS_CURRENT_KEY: k1
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Create schemas
+        run: psql "$DATABASE_URL" -f infra/postgres/init/01-schemas.sql
+      - name: Apply migrations (cdp + cms)
+        run: pnpm db:migrate
+      - name: Payload schema drift check
+        run: pnpm --filter @fp/web migrate:check
+      - run: pnpm test:int
+        env:
+          SECRETS_KEYRING: k1:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          SECRETS_CURRENT_KEY: k1
+
+  build:
+    name: Build images
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [quality]
+    strategy:
+      matrix:
+        include:
+          - { name: web, dockerfile: infra/docker/Dockerfile.web, args: '' }
+          - { name: collector, dockerfile: infra/docker/Dockerfile.node, args: 'APP=collector' }
+          - { name: worker, dockerfile: infra/docker/Dockerfile.node, args: 'APP=worker' }
+          - { name: postgres, dockerfile: infra/docker/Dockerfile.postgres, args: '' }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          build-args: ${{ matrix.args }}
+          push: false
+          tags: fp-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+  e2e:
+    name: End-to-end (Playwright, full stack + mock destinations)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: cp .env.example .env
+      - name: Infrastructure (Postgres, Valkey, Mailpit, Caddy)
+        run: pnpm infra:up
+      - run: pnpm db:migrate
+      - run: pnpm --filter @fp/web seed
+      - name: Build SDK and start the stack
+        run: |
+          pnpm --filter @fp/tracker-sdk build
+          (cd tooling/mock-destinations && node src/main.ts > /tmp/mock.log 2>&1 &)
+          (cd apps/collector && node --env-file=../../.env src/main.ts > /tmp/collector.log 2>&1 &)
+          (cd apps/worker && node --env-file=../../.env src/main.ts > /tmp/worker.log 2>&1 &)
+          (cd apps/web && pnpm build && pnpm start > /tmp/web.log 2>&1 &)
+          for i in $(seq 1 120); do curl -sf http://localhost:8080/api/healthz && break; sleep 2; done
+      - run: pnpm --filter @fp/e2e exec playwright install --with-deps chromium
+      - run: pnpm --filter @fp/e2e test
+        env: { CI: '1' }
+      - if: failure()
+        run: tail -n 200 /tmp/*.log
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-report, path: apps/e2e/playwright-report }
+
+  security:
+    name: Secrets, dependencies, images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read, security-events: write }
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with: { node-version: '${{ env.NODE_VERSION }}', cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --prod --audit-level high
+      - uses: aquasecurity/trivy-action@0.33.1
+        with:
+          {
+            scan-type: fs,
+            scan-ref: .,
+            severity: 'CRITICAL,HIGH',
+            ignore-unfixed: true,
+            exit-code: '1',
+          }

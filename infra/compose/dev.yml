@@ -1,0 +1,67 @@
+# Local development infrastructure. Apps run on the host (pnpm dev); everything else runs here.
+# Host ports are deliberately non-default to avoid clashing with other local stacks.
+name: funnel-platform-dev
+
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: fp
+      POSTGRES_PASSWORD: fp
+      POSTGRES_DB: fp
+    ports: ['54330:5432']
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U fp -d fp']
+      interval: 2s
+      retries: 30
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    # noeviction is mandatory for BullMQ; AOF everysec bounds data loss to ~1s (ADR-0006).
+    command:
+      [
+        'valkey-server',
+        '--appendonly',
+        'yes',
+        '--appendfsync',
+        'everysec',
+        '--maxmemory-policy',
+        'noeviction',
+      ]
+    ports: ['6390:6379']
+    volumes: [valkeydata:/data]
+    healthcheck:
+      test: ['CMD', 'valkey-cli', 'ping']
+      interval: 2s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ['8026:8025', '1026:1025']
+
+  s3:
+    # S3-compatible object storage for media and exports (MinIO no longer publishes images).
+    image: chrislusf/seaweedfs:3.97
+    command: ['server', '-dir=/data', '-s3', '-s3.port=8333', '-master.volumeSizeLimitMB=256']
+    ports: ['8333:8333']
+    volumes: [s3data:/data]
+
+  lgtm:
+    # Grafana + Loki + Tempo + Mimir + OTel Collector in one dev image (ADR-0018).
+    image: grafana/otel-lgtm:0.11.10
+    ports: ['3005:3000', '4317:4317', '4318:4318']
+
+  caddy:
+    # Mirrors production path routing: /_t/* -> collector, everything else -> web (ADR-0005).
+    image: caddy:2.10-alpine
+    ports: ['8080:8080']
+    volumes: [../caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro]
+    extra_hosts: ['host.docker.internal:host-gateway']
+
+volumes:
+  pgdata:
+  valkeydata:
+  s3data:

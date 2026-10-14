@@ -1,0 +1,13 @@
+pnpm-lock.yaml
+**/payload-types.ts
+**/importMap.js
+**/migrations/**
+**/.next/**
+**/node_modules/**
+apps/web/src/app/(payload)/**
+# Tool-managed agent guidance (turbo / next rewrite these)
+**/AGENTS.md
+**/fixtures/*.json
+docs/api/
+docs/event-catalog.md
+infra/helm/**/templates/

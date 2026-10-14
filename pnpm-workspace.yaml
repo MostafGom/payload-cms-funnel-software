@@ -1,0 +1,13 @@
+packages:
+  - apps/*
+  - packages/*
+  - packages/modules/*
+  - packages/destinations/*
+  - tooling/*
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  # optional native msgpack accelerator (via bullmq); the pure-JS fallback is fine
+  msgpackr-extract: false

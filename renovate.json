@@ -1,0 +1,22 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "minimumReleaseAge": "14 days",
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "description": "Payload and Next must move together and pass full E2E (plan §10 risk: upgrades)",
+      "groupName": "payload + next",
+      "matchPackageNames": [
+        "payload",
+        "@payloadcms/**",
+        "next",
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom"
+      ]
+    },
+    { "groupName": "opentelemetry", "matchPackageNames": ["@opentelemetry/**"] }
+  ]
+}

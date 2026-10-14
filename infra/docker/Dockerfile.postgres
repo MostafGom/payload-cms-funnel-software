@@ -1,0 +1,9 @@
+# Postgres 18 with WAL-G for continuous archiving to S3 (NFR-9: RPO <= 5 min, RTO <= 2 h).
+ARG PG_VERSION=18
+FROM postgres:${PG_VERSION}
+ARG WALG_VERSION=v3.0.9
+ADD https://github.com/wal-g/wal-g/releases/download/${WALG_VERSION}/wal-g-pg-24.04-amd64.tar.gz /tmp/wal-g.tgz
+RUN tar -xzf /tmp/wal-g.tgz -C /tmp && install -m 0755 "$(find /tmp -maxdepth 2 -type f -name "wal-g*" ! -name "*.tgz" | head -1)" /usr/local/bin/wal-g && rm -rf /tmp/wal-g*
+COPY infra/postgres/init/ /docker-entrypoint-initdb.d/
+COPY infra/backup/walg-env.sh /usr/local/bin/walg-env.sh
+COPY infra/backup/backup-loop.sh /usr/local/bin/backup-loop.sh

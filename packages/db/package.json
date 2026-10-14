@@ -1,0 +1,23 @@
+{
+  "name": "@fp/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "migrate": "node --env-file-if-exists=../../.env src/cli.ts migrate",
+    "partitions": "node --env-file-if-exists=../../.env src/cli.ts partitions",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/platform": "workspace:*",
+    "drizzle-orm": "0.45.4",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@fp/testing": "workspace:*"
+  }
+}

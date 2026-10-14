@@ -1,0 +1,43 @@
+# Next.js + Payload (standalone output) and the one-shot migrator.
+#   docker build -f infra/docker/Dockerfile.web -t fp-web .
+#   docker build -f infra/docker/Dockerfile.web --target migrator -t fp-migrator .
+ARG NODE_VERSION=24.21.0
+
+FROM node:${NODE_VERSION}-alpine AS base
+ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH CI=1 NEXT_TELEMETRY_DISABLED=1
+RUN corepack enable
+WORKDIR /app
+
+FROM base AS builder
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm fetch
+COPY . .
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --offline --frozen-lockfile --filter "@fp/web..." --filter "@fp/db..."
+# The SDK is served same-origin from public/assets (FR-TRK-1).
+RUN pnpm --filter @fp/tracker-sdk build
+# Build-time placeholders only: real values are injected at runtime. Nothing here reaches a DB.
+ENV PAYLOAD_SECRET=build-time-placeholder-not-a-secret-000000 \
+    DATABASE_URL=postgres://build:build@localhost:5432/build \
+    REDIS_URL=redis://localhost:6379 \
+    SECRETS_KEYRING=build:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= \
+    SECRETS_CURRENT_KEY=build \
+    NEXT_PUBLIC_SERVER_URL=http://localhost:3000
+RUN cd apps/web && pnpm build
+
+# One-shot migrator (ADR-0019/0020): cdp SQL migrations, then Payload migrations.
+FROM builder AS migrator
+ENV NODE_ENV=production
+RUN rm -rf apps/web/.next
+USER node
+CMD ["sh", "-c", "node packages/db/src/cli.ts migrate && cd apps/web && pnpm payload migrate"]
+
+FROM node:${NODE_VERSION}-alpine AS runner
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+WORKDIR /app
+COPY --from=builder --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=node:node /app/apps/web/public ./apps/web/public
+USER node
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=3s --retries=6 CMD wget -qO- http://127.0.0.1:3000/api/healthz || exit 1
+CMD ["node", "apps/web/server.js"]
