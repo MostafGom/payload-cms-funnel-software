@@ -1,0 +1,28 @@
+{
+  "event_source": "web",
+  "event_source_id": "1234567890",
+  "test_event_code": "TEST123",
+  "data": [
+    {
+      "event": "SubmitForm",
+      "event_time": 1791972000,
+      "event_id": "0199d5a4-0f6b-7c3e-9a2b-6f1d2c3b4a59",
+      "user": {
+        "email": "b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72",
+        "phone": "413ba75461ab5f99d36820e561ea97e2bd80f9cb586f7ecea6cf4c496518950a",
+        "external_id": "d45a5a6aa00d6513842e88a778162086fea71379a21cf0524e64ae75506ae574",
+        "ttclid": "TTCLID",
+        "ttp": "TTP",
+        "ip": "203.0.113.77",
+        "user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+      },
+      "page": {
+        "url": "https://go.brand.com/signup?utm_source=meta&fbclid=FBCLID&ttclid=TTCLID&ScCid=SCCID",
+        "referrer": "https://l.facebook.com/"
+      },
+      "properties": {
+        "content_name": "form:form-1"
+      }
+    }
+  ]
+}

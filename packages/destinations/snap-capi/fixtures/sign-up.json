@@ -1,0 +1,41 @@
+{
+  "data": [
+    {
+      "event_name": "SIGN_UP",
+      "event_time": 1791972000,
+      "event_id": "0199d5a4-0f6b-7c3e-9a2b-6f1d2c3b4a59",
+      "action_source": "website",
+      "event_source_url": "https://go.brand.com/signup?utm_source=meta&fbclid=FBCLID&ttclid=TTCLID&ScCid=SCCID",
+      "user_data": {
+        "em": [
+          "b5fc85e55755f9e0d030a10ab4429b6b2944855f9a0d60077fe832becbc41d72"
+        ],
+        "ph": [
+          "413ba75461ab5f99d36820e561ea97e2bd80f9cb586f7ecea6cf4c496518950a"
+        ],
+        "fn": [
+          "fdee430d40bd57deeac186cd9790033d0f06f909a8806e7ce6e717ab7c7d5029"
+        ],
+        "ln": [
+          "fb1e7ec987523d2cb9e022cec1d6ae7c99dc46edfae4fe51254025fe4bea571f"
+        ],
+        "ct": [
+          "1a6bd4d9d79dc0a79b53795c70d3349fa9e38968a3fbefbfe8783efb1d2b6aac"
+        ],
+        "country": [
+          "79adb2a2fce5c6ba215fe5f27f532d4e7edbac4b6a5e09e1ef3a08084a904621"
+        ],
+        "external_id": [
+          "d45a5a6aa00d6513842e88a778162086fea71379a21cf0524e64ae75506ae574"
+        ],
+        "client_ip_address": "203.0.113.77",
+        "client_user_agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)",
+        "sc_click_id": "SCCID",
+        "sc_cookie1": "SCID"
+      },
+      "custom_data": {
+        "sign_up_method": "form"
+      }
+    }
+  ]
+}
