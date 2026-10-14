@@ -1,0 +1,18 @@
+{
+  "name": "@fp/destinations-sdk",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./fixture": "./src/fixture.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/contracts": "workspace:*",
+    "@fp/platform": "workspace:*",
+    "zod": "4.6.5"
+  }
+}

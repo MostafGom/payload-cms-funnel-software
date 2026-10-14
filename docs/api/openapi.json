@@ -1,0 +1,641 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Funnel Platform public API",
+    "version": "1.0.0",
+    "description": "Same-origin endpoints used by funnel pages. Admin APIs are internal."
+  },
+  "paths": {
+    "/api/v1/forms/{formId}/submissions": {
+      "post": {
+        "summary": "Submit a form (FR-FRM-3..8)",
+        "parameters": [
+          {
+            "name": "formId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "values": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "additionalProperties": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "maxItems": 50,
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "maxLength": 256
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  "meta": {
+                    "type": "object",
+                    "properties": {
+                      "eventId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "sessionId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "anonymousId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                      },
+                      "startedAt": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      "hp": {
+                        "type": "string",
+                        "maxLength": 256
+                      },
+                      "turnstileToken": {
+                        "type": "string",
+                        "maxLength": 4096
+                      },
+                      "pageUrl": {
+                        "type": "string",
+                        "maxLength": 2048,
+                        "format": "uri"
+                      },
+                      "referrer": {
+                        "type": "string",
+                        "maxLength": 2048
+                      },
+                      "firstTouch": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "maxLength": 2048
+                          },
+                          "referrer": {
+                            "type": "string",
+                            "maxLength": 2048
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          }
+                        },
+                        "required": [
+                          "url",
+                          "at"
+                        ]
+                      },
+                      "lastTouch": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "maxLength": 2048
+                          },
+                          "referrer": {
+                            "type": "string",
+                            "maxLength": 2048
+                          },
+                          "at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                          }
+                        },
+                        "required": [
+                          "url",
+                          "at"
+                        ]
+                      },
+                      "funnel": {
+                        "type": "object",
+                        "properties": {
+                          "funnelId": {
+                            "type": "string",
+                            "maxLength": 64
+                          },
+                          "stepId": {
+                            "type": "string",
+                            "maxLength": 64
+                          },
+                          "variantKey": {
+                            "type": "string",
+                            "maxLength": 64
+                          },
+                          "experimentId": {
+                            "type": "string",
+                            "maxLength": 64
+                          }
+                        },
+                        "required": [
+                          "funnelId"
+                        ]
+                      },
+                      "consent": {
+                        "type": "object",
+                        "properties": {
+                          "a": {
+                            "type": "boolean"
+                          },
+                          "m": {
+                            "type": "boolean"
+                          },
+                          "d": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "a",
+                          "m"
+                        ]
+                      },
+                      "locale": {
+                        "type": "string",
+                        "maxLength": 35
+                      },
+                      "tz": {
+                        "type": "string",
+                        "maxLength": 64
+                      }
+                    },
+                    "required": [
+                      "eventId",
+                      "sessionId",
+                      "startedAt",
+                      "pageUrl"
+                    ]
+                  }
+                },
+                "required": [
+                  "values",
+                  "meta"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Accepted (also returned to suspected bots)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "const": true
+                    },
+                    "submissionId": {
+                      "type": "string"
+                    },
+                    "eventId": {
+                      "type": "string",
+                      "format": "uuid",
+                      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                    },
+                    "next": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "redirect"
+                            },
+                            "url": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "message"
+                            },
+                            "message": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "message"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "submissionId",
+                    "eventId",
+                    "next"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Cross-origin request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Form not published"
+          },
+          "422": {
+            "description": "Validation failed (per-field errors)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "503": {
+            "description": "Temporarily unavailable; retry"
+          }
+        }
+      }
+    },
+    "/_t/e": {
+      "post": {
+        "summary": "Collect a batch of tracking events (FR-TRK-2). Body is JSON sent as text/plain.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "text/plain": {
+              "schema": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "properties": {
+                  "v": {
+                    "type": "number",
+                    "const": 1
+                  },
+                  "sk": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64
+                  },
+                  "sent_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "batch": {
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "type": "array",
+                    "items": {}
+                  }
+                },
+                "required": [
+                  "v",
+                  "sk",
+                  "sent_at",
+                  "batch"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Some events rejected"
+          },
+          "204": {
+            "description": "All accepted"
+          },
+          "400": {
+            "description": "Invalid batch"
+          },
+          "403": {
+            "description": "Unknown site key"
+          },
+          "413": {
+            "description": "Body over 64 KB"
+          },
+          "429": {
+            "description": "Rate limited"
+          },
+          "503": {
+            "description": "Buffer unavailable; SDK retries"
+          }
+        }
+      }
+    },
+    "/api/v1/email/unsubscribe": {
+      "get": {
+        "summary": "Unsubscribe confirmation page",
+        "parameters": [
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HTML page"
+          }
+        }
+      },
+      "post": {
+        "summary": "RFC 8058 one-click unsubscribe",
+        "parameters": [
+          {
+            "name": "t",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unsubscribed"
+          }
+        }
+      }
+    },
+    "/api/v1/email/confirm": {
+      "get": {
+        "summary": "Double opt-in confirmation",
+        "parameters": [
+          {
+            "name": "t",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Confirmed"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "EventEnvelope": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "event_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]{1,63}$"
+          },
+          "schema_v": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "anonymous_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "sdk_v": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "page": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "maxLength": 2048,
+                "format": "uri"
+              },
+              "path": {
+                "type": "string",
+                "maxLength": 1024
+              },
+              "referrer": {
+                "type": "string",
+                "maxLength": 2048
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 512
+              }
+            },
+            "required": [
+              "url",
+              "path"
+            ]
+          },
+          "context": {
+            "default": {},
+            "type": "object",
+            "properties": {
+              "locale": {
+                "type": "string",
+                "maxLength": 35
+              },
+              "tz": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "screen": {
+                "type": "object",
+                "properties": {
+                  "w": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "h": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "w",
+                  "h"
+                ]
+              },
+              "consent": {
+                "type": "object",
+                "properties": {
+                  "a": {
+                    "type": "boolean"
+                  },
+                  "m": {
+                    "type": "boolean"
+                  },
+                  "v": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "d": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "a",
+                  "m"
+                ]
+              }
+            }
+          },
+          "funnel": {
+            "type": "object",
+            "properties": {
+              "funnel_id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "step_id": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "variant_key": {
+                "type": "string",
+                "maxLength": 64
+              },
+              "experiment_id": {
+                "type": "string",
+                "maxLength": 64
+              }
+            },
+            "required": [
+              "funnel_id"
+            ]
+          },
+          "properties": {
+            "default": {},
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "maxLength": 128
+            },
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "occurred_at",
+          "session_id",
+          "sdk_v",
+          "page"
+        ]
+      }
+    }
+  }
+}

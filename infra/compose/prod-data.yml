@@ -1,0 +1,105 @@
+# Data node (ADR-0019): Postgres with WAL-G archiving, nightly base backups, Valkey, observability.
+# Deploy: docker compose -f infra/compose/prod-data.yml --env-file /etc/fp/data.env up -d
+name: fp-data
+
+x-walg-env: &walg
+  WALG_S3_PREFIX: ${WALG_S3_PREFIX:?}
+  AWS_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:?}
+  AWS_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:?}
+  AWS_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+  AWS_REGION: ${BACKUP_S3_REGION:-us-east-1}
+  AWS_S3_FORCE_PATH_STYLE: ${BACKUP_S3_FORCE_PATH_STYLE:-false}
+  WALG_LIBSODIUM_KEY: ${WALG_LIBSODIUM_KEY:?backups must be encrypted}
+  WALG_LIBSODIUM_KEY_TRANSFORM: hex
+
+services:
+  postgres:
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-postgres:${PG_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command:
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_command=. /usr/local/bin/walg-env.sh; wal-g wal-push %p
+      # Bounds data loss to 60 s (NFR-9 RPO <= 5 min).
+      - -c
+      - archive_timeout=60
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=${PG_SHARED_BUFFERS:-2GB}
+      - -c
+      - effective_cache_size=${PG_EFFECTIVE_CACHE:-6GB}
+      - -c
+      - log_min_duration_statement=500
+    environment:
+      <<: *walg
+      POSTGRES_USER: ${POSTGRES_USER:-fp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:-fp}
+    ports: ['${PRIVATE_IP:?}:5432:5432'] # private network only; firewall to the app node
+    volumes: [pgdata:/var/lib/postgresql]
+    shm_size: 1g
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-fp} -d ${POSTGRES_DB:-fp}']
+      interval: 5s
+      retries: 30
+
+  backup:
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-postgres:${PG_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    user: postgres
+    entrypoint: ['/usr/local/bin/backup-loop.sh']
+    environment:
+      <<: *walg
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-fp}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:-fp}
+      PGDATA: /var/lib/postgresql/18/docker
+      BACKUP_INTERVAL_HOURS: 24
+      BACKUP_RETAIN_FULL: 7
+    volumes: [pgdata:/var/lib/postgresql:ro]
+    depends_on: { postgres: { condition: service_healthy } }
+
+  valkey:
+    image: valkey/valkey:8-alpine
+    restart: unless-stopped
+    command:
+      [
+        'valkey-server',
+        '--appendonly',
+        'yes',
+        '--appendfsync',
+        'everysec',
+        '--maxmemory-policy',
+        'noeviction',
+        '--requirepass',
+        '${VALKEY_PASSWORD:?}',
+      ]
+    ports: ['${PRIVATE_IP:?}:6379:6379']
+    volumes: [valkeydata:/data]
+    healthcheck:
+      test: ['CMD', 'valkey-cli', '-a', '${VALKEY_PASSWORD:?}', 'ping']
+      interval: 5s
+      retries: 30
+
+  observability:
+    # Grafana + Loki + Tempo + Mimir + OTel collector (ADR-0018). Dashboards and alerts are code.
+    image: grafana/otel-lgtm:0.11.10
+    restart: unless-stopped
+    ports: ['${PRIVATE_IP:?}:4318:4318', '127.0.0.1:3000:3000']
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?}
+    volumes:
+      - lgtmdata:/data
+      - ../grafana/dashboards:/otel-lgtm/grafana/conf/provisioning/dashboards/fp:ro
+      - ../grafana/provisioning/dashboards.yml:/otel-lgtm/grafana/conf/provisioning/dashboards/fp.yml:ro
+      - ../grafana/provisioning/alerting:/otel-lgtm/grafana/conf/provisioning/alerting:ro
+
+volumes:
+  pgdata:
+  valkeydata:
+  lgtmdata:

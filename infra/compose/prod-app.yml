@@ -1,0 +1,66 @@
+# App node (ADR-0019): Caddy (TLS) -> web x2 / collector x2, worker roles split by container.
+# Deploy with infra/scripts/deploy.sh (migrator first, then rolling restart with health gates).
+name: fp-app
+
+x-app: &app
+  restart: unless-stopped
+  env_file: [/etc/fp/app.env]
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ['no-new-privileges:true']
+  cap_drop: [ALL]
+  logging: { driver: json-file, options: { max-size: 20m, max-file: '5' } }
+
+services:
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports: ['80:80', '443:443', '443:443/udp']
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:?}
+      PRIMARY_DOMAIN: ${PRIMARY_DOMAIN:?}
+    volumes:
+      - ../caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on: [web, collector]
+
+  migrator:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-migrator:${TAG:?}
+    restart: 'no'
+    read_only: false
+    profiles: [migrate]
+
+  web:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-web:${TAG:?}
+    deploy: { replicas: 2, resources: { limits: { memory: 1536m } } }
+    tmpfs: [/tmp, '/app/apps/web/.next/cache']
+    environment: { SERVICE_NAME: web }
+
+  collector:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-collector:${TAG:?}
+    deploy: { replicas: 2, resources: { limits: { memory: 256m } } }
+    environment: { SERVICE_NAME: collector, CLIENT_IP_HEADER: cf-connecting-ip }
+
+  worker-ingest:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-worker:${TAG:?}
+    deploy: { replicas: 2 }
+    environment: { WORKER_ROLES: 'ingest,relay' }
+
+  worker-destinations:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-worker:${TAG:?}
+    environment: { WORKER_ROLES: 'destinations,email' }
+
+  worker-scheduler:
+    <<: *app
+    image: ${REGISTRY:-ghcr.io/your-org}/fp-worker:${TAG:?}
+    environment: { WORKER_ROLES: scheduler }
+
+volumes:
+  caddydata:
+  caddyconfig:
