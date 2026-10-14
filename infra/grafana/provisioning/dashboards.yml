@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: funnel-platform
+    folder: Funnel Platform
+    type: file
+    allowUiUpdates: false
+    options: { path: /otel-lgtm/grafana/conf/provisioning/dashboards/fp }

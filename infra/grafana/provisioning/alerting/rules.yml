@@ -1,0 +1,90 @@
+# SLO alerts (NFR-1..4, NFR-14). Thresholds mirror docs/requirements.md; tune with real traffic.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: funnel-platform-slo
+    folder: Funnel Platform
+    interval: 1m
+    rules:
+      - uid: fp-collector-latency
+        title: Collector p95 latency above 30 ms
+        condition: C
+        for: 10m
+        labels: { severity: warning }
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model:
+              {
+                expr: 'histogram_quantile(0.95, sum by (le) (rate(http_server_duration_milliseconds_bucket{service_name="collector"}[5m])))',
+                refId: A,
+              }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              {
+                type: threshold,
+                expression: A,
+                refId: C,
+                conditions: [{ evaluator: { type: gt, params: [30] } }],
+              }
+      - uid: fp-ingest-backlog
+        title: Ingest stream backlog growing (lag SLO at risk)
+        condition: C
+        for: 5m
+        labels: { severity: critical }
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 600, to: 0 }
+            model: { expr: 'max(fp_ingest_stream_pending)', refId: A }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              {
+                type: threshold,
+                expression: A,
+                refId: C,
+                conditions: [{ evaluator: { type: gt, params: [5000] } }],
+              }
+      - uid: fp-destination-failures
+        title: Destination failure ratio above 1% (Phase 1B exit >= 99% success)
+        condition: C
+        for: 15m
+        labels: { severity: critical }
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 900, to: 0 }
+            model:
+              expr: 'sum(rate(fp_destination_deliveries_total{outcome=~"failed|dead"}[15m])) / clamp_min(sum(rate(fp_destination_deliveries_total{outcome=~"success|failed|dead"}[15m])), 1e-9)'
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              {
+                type: threshold,
+                expression: A,
+                refId: C,
+                conditions: [{ evaluator: { type: gt, params: [0.01] } }],
+              }
+      - uid: fp-dlq
+        title: Events in the ingest dead-letter queue
+        condition: C
+        for: 1m
+        labels: { severity: warning }
+        data:
+          - refId: A
+            datasourceUid: prometheus
+            relativeTimeRange: { from: 300, to: 0 }
+            model: { expr: 'max(fp_ingest_dlq_length)', refId: A }
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              {
+                type: threshold,
+                expression: A,
+                refId: C,
+                conditions: [{ evaluator: { type: gt, params: [0] } }],
+              }

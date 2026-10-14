@@ -1,0 +1,33 @@
+{
+  "name": "@fp/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=../../.env --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@fp/attribution": "workspace:*",
+    "@fp/consent": "workspace:*",
+    "@fp/contracts": "workspace:*",
+    "@fp/db": "workspace:*",
+    "@fp/dest-meta-capi": "workspace:*",
+    "@fp/dest-snap-capi": "workspace:*",
+    "@fp/dest-tiktok-events": "workspace:*",
+    "@fp/dest-webhook": "workspace:*",
+    "@fp/destinations-sdk": "workspace:*",
+    "@fp/email": "workspace:*",
+    "@fp/email-providers": "workspace:*",
+    "@fp/event-schemas": "workspace:*",
+    "@fp/platform": "workspace:*",
+    "@fp/segments": "workspace:*",
+    "@fp/tracking": "workspace:*",
+    "bullmq": "6.3.9",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@fp/testing": "workspace:*"
+  }
+}
