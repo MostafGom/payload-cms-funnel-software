@@ -1,5 +1,7 @@
 # Funnel Platform
 
+> **Note:** Built by directing AI coding agents. I set the goals and requirements; the code is mostly AI-generated. Demo project, not in production.
+
 Funnels, forms, CRM and CDP (customer data platform) built on **Payload CMS v3 + Next.js 16**. The first release targets free sign-up funnels with first-party tracking plus server-side conversion events for Meta, TikTok and Snap.
 
 | Read this                                                                                          | For                                                                 |
